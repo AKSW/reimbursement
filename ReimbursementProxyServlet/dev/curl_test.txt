@@ -1,0 +1,12 @@
+when using a local server (e.g. jetty) running the servlet
+use e.g.
+
+curl --form "fileupload=@test.xml" --form "reimbursement-type=dienstreiseantrag" http://localhost:8080/ReimbursementProxyServlet/Proxy -o curl.pdf -v
+
+to try fetching the pdf
+NOTE: the host must be inside the university network!
+
+curl --form "fileupload=@test.xml" --form "reimbursement-type=dienstreiseantrag" http://localhost:8080/ReimbursementProxyServlet/Proxy -v
+to see error information inside the response headers; use e.g. http://www.freeformatter.com/base64-encoder.html to decode the rka-debug string
+
+or display http://localhost:8080/ReimbursementProxyServlet/Proxy in a browser to show error log of last post request
