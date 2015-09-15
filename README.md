@@ -6,9 +6,11 @@ AKSW Travel Reimbursement Tool
 ## 1. Preamble
 The following files are part of the web service 'AKSW Travel Reimburstement'
 
-Live Development Version (Alpha): https://script.google.com/macros/s/AKfycbwyY0qTZMg8ETrFz18QqAXEKFJ0hw11-w1CabUJi3Tk/dev
+* Live Development Version (Alpha): 
+https://script.google.com/macros/s/AKfycbwyY0qTZMg8ETrFz18QqAXEKFJ0hw11-w1CabUJi3Tk/dev
 
-Snapshot Version (Beta): https://script.google.com/macros/s/AKfycbyp7TdoDHTX7XGtjxp9BgaOP7KeBe3xJr-FhT_glxoP7WI1pYsw/exec
+* Snapshot Version (Beta): 
+https://script.google.com/macros/s/AKfycbyp7TdoDHTX7XGtjxp9BgaOP7KeBe3xJr-FhT_glxoP7WI1pYsw/exec
 
 
 ## 2. Project overview
@@ -35,11 +37,12 @@ tba
 ## 4. (Re-)Deployment
 This information is just relevant to admins.
 
-### 4.1 Requirements
+### Requirements
 * Java Servlet 2.5 compatible Web Container with JRE 1.7. (or higher) running on a server inside the university network
-### 4.2 Installation & Configuration
+
+### Installation & Configuration
 1. Install the `ReimbursementProxyServlet.war` on your Web Container
-2. Change the coressponding URL variable in `BackendLogic.gs' in to the newly installed Service
+2. Change the coressponding URL variable in `BackendLogic.gs` in to the newly installed Service
 
 ## 5. License
 Copyright 2015 AKSW
@@ -60,20 +63,22 @@ limitations under the License.
 
 ## 6. Appendix: 
 ### VPN setup 
-to use the university travel reimbursement form [2] (for generating a xml file) from outside the university network
+to use the university travel reimbursement form [2] for generating a xml file from outside the university network
 
 #### On Ubuntu:
 1. sudo apt-get install network-manager-openconnect
 2. open the "Network Connections" Manager GUI
 
-OPTION: A
-3. Click on "VPN" -> "Add" -> Choose "Cisco Any Connect Compatible VPN (openconnect)" -> "Create"
-4. Set vpn.uni-leipzig.de  as "VPN Gateway"
-5. Connect -> enter your credentials from Uni Leipzig or ask Sebastian for credentials if you're external
+	OPTION: A
 
-OPTION: B
-3. Click on "VPN" -> "Import" -> Select the provided configuration file "UniLeipzigVPNConfig"
-4. Connect -> enter your credentials from Uni Leipzig or ask Sebastian for credentials if you're external
+	3. Click on "VPN" -> "Add" -> Choose "Cisco Any Connect Compatible VPN (openconnect)" -> "Create"
+	4. Set vpn.uni-leipzig.de  as "VPN Gateway"
+	5. Connect -> enter your credentials from Uni Leipzig or ask Sebastian for credentials if you're external
+
+	OPTION: B
+
+	3. Click on "VPN" -> "Import" -> Select the provided configuration file "UniLeipzigVPNConfig"
+	4. Connect -> enter your credentials from Uni Leipzig or ask Sebastian for credentials if you're external
 
 NOTE: if you want to use the cisco client (e.g. if you don't have apt-get or aptitude) have a look at
 https://www.urz.uni-leipzig.de/hilfe/anleitungen-a-z/vpn/vpn-zugang-unter-linux/
