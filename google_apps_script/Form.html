@@ -1,0 +1,150 @@
+<!-- Include the Google CSS package -->
+<link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+<link rel="stylesheet" href="https://docs.google.com/static/forms/client/css/3855039408-formview_st_ltr.css">
+
+<h1 class="ss-form-title" dir="ltr">Travel-Reimbursement</h1>
+<div id="formDiv">
+<form id="myForm" name="myForm">
+
+    <div class="ss-form-question errorbox-good">
+    <div class="ss-item ss-text" dir="ltr">
+        <div class="ss-form-entry">
+            <div class="ss-q-title">
+                <label class="ss-q-item-label" for="entry_1988214217">Uni Form XML-File Upload</label>
+            </div>
+            <div class="ss-q-help ss-secondary-text" dir="ltr">Fill out the <a href="https://service.uni-leipzig.de/pvz/dienstreiseantrag/save" target="_blank">form</a> and download it as xml file to submit it below. </div>
+             <input name="FileToLoad" type="file">
+            <div class="error-message" id="754981348_errorMessage">Error Message</div>
+            <div class="required-message">
+                Dieses Feld muss ausgefüllt werden.
+            </div>
+        </div>
+    </div>
+    </div>
+    
+    <div class="ss-form-question errorbox-good">
+    <div class="ss-item ss-select">
+        <div class="ss-form-entry">
+            <div class="ss-q-title">
+                <label class="ss-q-item-label">Project</label>
+            </div>
+            <div class="ss-q-help ss-secondary-text">Choose the project of the travel</div>
+            <select class="valid" name="PaidBy">                             <!-- generate the dropdown list for the current projects by reading it from a spreadsheet -->
+            
+            <? var data = getProjectsFromSpreadsheet();
+            for (var i = 0; i < data.length; i++) {  ?> 
+            <option value="<?= getProjectsFromSpreadsheet()[i].Name ?>"><?= getProjectsFromSpreadsheet()[i].Name ?></option>
+            <? } ?>
+               <!-- <option value="DIESEL">DIESEL</option>
+                <option value="LEDS">LEDS</option>
+                <option value="SmartDataWeb">SmartDataWeb</option>
+                <option value="LinkingLOD">LinkingLOD</option>
+                <option value="Aligned">Aligned</option>
+                <option value="BigDataEurope">BigDataEurope</option>
+                <option value="Freme">Freme</option>
+                <option value="Sake">Sake</option>
+                <option value="LIDER">LIDER</option>
+                <option value="GeoKnow">GeoKnow</option> -->
+            </select>
+            <div class="required-message">
+                Dieses Feld muss ausgefüllt werden.
+            </div>
+        </div>
+    </div>
+    </div>
+    
+    <div class="ss-form-question errorbox-good">
+    <div class="ss-item ss-text" dir="ltr">
+        <div class="ss-form-entry">
+            <div class="ss-q-title">
+                <label class="ss-q-item-label" for="entry_1988214217">Justification</label>
+            </div>
+            <div class="ss-q-help ss-secondary-text" dir="ltr">The justification is not covered by the xml file. Please provide it here.</div>
+            <textarea name="Justification" rows="8" style="width: 230px" class="ss-q-long valid" id="entry_1988214217" dir="auto" aria-label="Justification"></textarea>
+            <div class="error-message" id="754981348_errorMessage">Error Message</div>
+            <div class="required-message">
+                Dieses Feld muss ausgefüllt werden.
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!--
+    <div class="ss-item ss-radio" dir="ltr">
+        <div class="ss-form-entry">
+            <label class="ss-q-item-label" for="entry_754981348"></label>
+
+            <div class="ss-q-title">
+                <label class="ss-q-item-label" for="entry_754981348">XML File URL</label>
+            </div>
+            <ul class="ss-choices">
+                <li class="ss-choice-item"><label><span class="ss-choice-item-control goog-inline-block"><input class="ss-q-radio valid" id="group_1988214217_1" name="entry.1988214217" type="radio"
+                value="a"></span> <span class="ss-choice-label">a</span></label></li>
+
+                <li class="ss-choice-item"><label><span class="ss-choice-item-control goog-inline-block"><input class="ss-q-radio valid" id="group_1988214217_2" name="entry.1988214217" type="radio"
+                value="b"></span> <span class="ss-choice-label">b</span></label></li>
+            </ul>
+            <div class="error-message" id="754981348_errorMessage"></div>
+            <div class="required-message">
+                Dieses Feld muss ausgefüllt werden.
+            </div>
+        </div>
+    </div> -->
+    
+    <input onclick="FileUploadJs(this.parentNode)" type="button" value="Submit">
+</form>
+</div>
+
+<pre>
+<div id="status" style="display: none;">
+
+  <!-- div will be filled with innerHTML after form submission. -->
+  Uploading. Please wait...
+
+</div>
+</pre>
+
+
+<script>
+
+/** Javascript function called after clicking on submit button
+ *
+ * @param {??} the whole Form Element
+ */
+function FileUploadJs(frmData) {
+
+  document.getElementById('status').style = 'display:inline';
+  document.getElementById('status').innerHTML = 'Uploading. Please wait...';
+
+  google.script.run
+    .withSuccessHandler(updateOutput)
+    .withFailureHandler(showError)
+    .processForm(frmData)
+};
+
+/** Javascript function called by "submit" button handler, to show success report
+ *
+ * @param {String} outp return value of function processForm(theForm) in FormProcessing.gs
+ */
+function updateOutput(outp) {
+
+    var outputDiv = document.getElementById('status');
+    if (outp.status=='ok')
+    {
+         outputDiv.innerHTML = 'Reimbursement Files have been uploaded and processed successfully.\n\n'+outp.log;
+         outputDiv.style = "display: inline; background-color: rgba(100, 232, 127, 0.46);";
+    }
+    else
+    {
+         outputDiv.innerHTML = 'An ERROR occured:\n\n'+outp.log;
+         outputDiv.style = "background-color: rgba(239, 83, 83, 0.46)";
+    }
+};
+
+
+function showError(outp) {
+
+    var outputDiv = document.getElementById('status');
+    outputDiv.innerHTML = outp;
+};
+</script>

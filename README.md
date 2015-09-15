@@ -1,1 +1,67 @@
-# reimbursement
+AKSW Travel Reimbursement Tool
+===
+
+
+
+## 1. Preamble
+The following files are part of the web service 'AKSW Travel Reimburstement'
+
+Live Development Version (Alpha): https://script.google.com/macros/s/AKfycbwyY0qTZMg8ETrFz18QqAXEKFJ0hw11-w1CabUJi3Tk/dev
+
+Snapshot Version (Beta): https://script.google.com/macros/s/AKfycbyp7TdoDHTX7XGtjxp9BgaOP7KeBe3xJr-FhT_glxoP7WI1pYsw/exec
+
+
+## 2. Project overview
+The project consists of two web service components:
+
+#### Google Apps Script Component
+This is the main service hosted in the Google Cloud.  
+Files Overview:
+* `FormProcessing.gs` - Controller (communication between Model and View)
+* `Form.html` - View
+* `BackendLogic.gs` - Model
+* `Macros.gs` - the user defined macros for complex business calculations are stored within this file
+
+#### Java Servlet Proxy
+This (internal) helper service just fetches the university reimbursement pdf files by listening for a post request with a reimbursement XML file and returning the generated pdf file from the university webservice. Therefore it uses the browser simulation framework HtmlUnit [1].
+
+Files Overview:
+* `ReimbursementProxyServlet.war` - pre-compiled Web application Archive
+* `ReimbursementProxyServlet.java` - source code 
+
+## 3. How it works
+tba
+
+## 4. (Re-)Deployment
+This information is just relevant to admins.
+
+### 4.1 Requirements
+* Java Servlet 2.5 compatible Web Container with JRE 1.7. (or higher) running on a server inside the university network
+### 4.2 Installation & Configuration
+1. Install the `ReimbursementProxyServlet.war` on your Web Container
+2. Change the coressponding URL variable in `BackendLogic.gs' in to the newly installed Service
+
+## 5. License
+Copyright 2015 AKSW
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+		
+## 6. References
+
+[1] http://htmlunit.sourceforge.net/
+
+
+
+
+
