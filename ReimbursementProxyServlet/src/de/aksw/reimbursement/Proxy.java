@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.InvalidParameterException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -24,6 +26,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.codec.binary.Base64;
@@ -85,7 +88,7 @@ public class Proxy extends HttpServlet {
 		response.getOutputStream();
 	
 		try (final WebClient webClient = new WebClient()) {
-			String uploadURL, confirmBoxName , pdfDownloadLinkName;
+			String uploadURL ="", confirmBoxName ="", pdfDownloadLinkName ="";
 			
 			webClient.getOptions().setThrowExceptionOnScriptError(false); //ignore javascript errors in htmlunit
 			
@@ -94,19 +97,34 @@ public class Proxy extends HttpServlet {
 			Path xml = Files.createTempFile("RKA-xml-temp-file", "xml"); // create a temp file for the uploaded xml
 			String reimbursementType = processMultiPartRequest(request, xml); //parse the http request
 			
-			if (reimbursementType.equalsIgnoreCase("dienstreiseantrag"))
+			mylog("Requested mode of reimbursement: "+reimbursementType);
+			
+			if (reimbursementType.startsWith("dienstreiseantrag"))
 			{
 				uploadURL = "https://service.uni-leipzig.de/pvz/dienstreiseantrag/uploadxml";
 				confirmBoxName = "dienstreiseantrag[bestaetigung]";
 				pdfDownloadLinkName= "» Download Dienstreiseantrag «";
-			} else
+			}  
+			else if (reimbursementType.startsWith("reisekostenabrechnung"))
 			{
 				uploadURL = "https://service.uni-leipzig.de/pvz/reisekostenabrechnung/uploadxml";
 				confirmBoxName = "reisekostenabrechnung[bestaetigung]";
 				pdfDownloadLinkName= "» Download Reisekostenabrechnung «";
 			}
+			else if (reimbursementType.startsWith("xmldownload"))
+			{
+				response.setContentType("application/xml");
+		        response.setHeader("Content-Disposition", "filename=\"dings.xml\"");
+		        //response.setHeader("RKA-debug", errors);
+		        IOUtils.copy(Files.newInputStream(xml), response.getOutputStream());
+			}
+			else
+			{
+				throw new InvalidParameterException("The requested reimbursement mode '"+reimbursementType+"' is not supported");
+			}
 			
-			mylog("Requested mode of reimbursement: "+reimbursementType);
+			if (!reimbursementType.startsWith("xmldownload"))
+			{
 
 			// rename the temporary file to a .xml file (so append the suffix); this needs to be done for htmlunit or the university service (probably because of mime type???)
 			String s = xml.getFileName().toString()+".xml";	
@@ -115,7 +133,7 @@ public class Proxy extends HttpServlet {
 			mylog("xml file stored in "+xml2.toString());
 			
 	        // Get the reimbursement page 
-			 final HtmlPage uploadPage = webClient.getPage(uploadURL);
+			final HtmlPage uploadPage = webClient.getPage(uploadURL);
 
 	        // Get the xml file upload form
 	        final HtmlForm fileForm = uploadPage.getForms().get(1);
@@ -163,7 +181,7 @@ public class Proxy extends HttpServlet {
 	        //response.setHeader("RKA-debug", errors);
 	        IOUtils.copy(in, response.getOutputStream());
 	        
-	        
+			}
 	        
 	    } catch (FailingHttpStatusCodeException e) {
 			// TODO Auto-generated catch block
@@ -200,33 +218,55 @@ public class Proxy extends HttpServlet {
 	protected String processMultiPartRequest(HttpServletRequest request, Path xml) throws ServletException
 	{
 		String reimbursementType = "";
+		String xmlUrl = "";
 		try {
 			
 	        List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(request);
 	        for (FileItem item : items) {
 	            if (item.isFormField()) {
-	                // Process regular form field --> reimbursement-type parameter
-	                //if ("reimbursement-type"==item.getFieldName())
+	                // Process regular form field --> reimbursement-type parameter or xml-url parameter
+	               if (item.getFieldName().equals("reimbursement-type"))
 	                	reimbursementType = item.getString();
-	            } else {
-	                // Process form file field (input type="file") --> thus the uploaded xml file
-	                //String fieldName = item.getFieldName();
-	                //String fileName = FilenameUtils.getName(item.getName());
-	                InputStream fileContent = item.getInputStream();
-	                
-	                // read the submitted xml file and store it as local temporary file
-	    			Long bytes = Files.copy(fileContent, xml, StandardCopyOption.REPLACE_EXISTING);
-	    			
-	    			//mylog(bytes.toString()+" "+xml.toAbsolutePath().toString()+" "+Arrays.toString(Files.readAllLines(xml, StandardCharsets.UTF_8).toArray()));
-	    			mylog("read "+bytes.toString()+" bytes of the xml file");
+	               if (item.getFieldName().equals("xml-url"))
+	            	   xmlUrl = item.getString();
+	            } else 
+	            {
+	                // Process form file field (input type="file") --> thus the uploaded xml file or nothing if it's a xmldownload request
+	            		
+	            	if (!reimbursementType.equals("xmldownload"))
+	            	{
+		                //String fieldName = item.getFieldName();
+		                //String fileName = FilenameUtils.getName(item.getName());
+		                InputStream fileContent = item.getInputStream();
+		                
+		                // read the submitted xml file and store it as local temporary file
+		    			Long bytes = Files.copy(fileContent, xml, StandardCopyOption.REPLACE_EXISTING);
+		    			
+		    			//mylog(bytes.toString()+" "+xml.toAbsolutePath().toString()+" "+Arrays.toString(Files.readAllLines(xml, StandardCharsets.UTF_8).toArray()));
+		    			mylog("read "+bytes.toString()+" bytes of the xml file");
+	            	}
 	            }
 	        }
+	        if (reimbursementType.equals("xmldownload"));
+	        {
+	        	try {
+					FileUtils.copyURLToFile(new URL(xmlUrl),xml.toFile(),10000,20000);
+					mylog("xml downloaded to "+xml.toFile().getAbsolutePath().toString()+" in "+xml.toFile().length()+" bytes.");
+				} catch (MalformedURLException e) {
+					throw new ServletException("No valid URL was given for xmldownload mode: "+e.getMessage(), e);
+				} catch (java.io.FileNotFoundException e) {
+					throw new ServletException("Could not access the given URL for xmldownload mode: "+e.getMessage(), e);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					throw new ServletException("Some IO-Error occured in xmldownload mode: "+e.getMessage(), e);
+				}
+	        }
 	    } catch (FileUploadException e) {
-	        throw new ServletException("Cannot parse multipart request.", e);
+	        throw new ServletException("Cannot parse multipart request: "+e.getMessage(), e);
 	        
 	    } catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+	    	throw new ServletException("An IO-Error occured while parsing the POST request: "+e.getMessage(), e);
 		}
 		return reimbursementType;
 	}

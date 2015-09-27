@@ -9,4 +9,7 @@ NOTE: the host must be inside the university network!
 curl --form "fileupload=@test.xml" --form "reimbursement-type=dienstreiseantrag" http://localhost:8080/ReimbursementProxyServlet/Proxy -v
 to see error information inside the response headers; use e.g. http://www.freeformatter.com/base64-encoder.html to decode the rka-debug string
 
-or display http://localhost:8080/ReimbursementProxyServlet/Proxy in a browser to show error log of last post request
+or display http://localhost:8080/ReimbursementProxyServlet/Proxy in a browser to show error log of *last* post request
+
+
+curl --form "xml-url=https://service.uni-leipzig.de/pvz/temp/b1e1013185483451e0823dbf5592b6e4.xml" --form "reimbursement-type=xmldownload" http://localhost:8080/ReimbursementProxyServlet/Proxy -o curl.xml -v
