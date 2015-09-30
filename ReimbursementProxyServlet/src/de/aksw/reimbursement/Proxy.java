@@ -111,6 +111,14 @@ public class Proxy extends HttpServlet {
 				confirmBoxName = "reisekostenabrechnung[bestaetigung]";
 				pdfDownloadLinkName= "» Download Reisekostenabrechnung «";
 			}
+			else if (reimbursementType.startsWith("xmlupload-dra"))
+			{
+				uploadURL = "https://service.uni-leipzig.de/pvz/dienstreiseantrag/uploadxml";
+			}
+			else if (reimbursementType.startsWith("xmlupload-rka"))
+			{
+				uploadURL = "https://service.uni-leipzig.de/pvz/reisekostenabrechnung/uploadxml";
+			}
 			else if (reimbursementType.startsWith("xmldownload"))
 			{
 				response.setContentType("application/xml");
@@ -140,46 +148,61 @@ public class Proxy extends HttpServlet {
 	        // find the submit button and the file path field
 	        final HtmlSubmitInput button = fileForm.getInputByName("save");
 	        final HtmlFileInput fileInput = fileForm.getInputByName("file");
+	        
 	        // set the file path of the xml 
 	        fileInput.setValueAttribute(xml2.toAbsolutePath().toString());
 	        //fileInput.setContentType("application/pdf");
 
 	        // Now submit the form by clicking the button and get back the reimbursement form page
 	        final HtmlPage formPage = button.click();
+	        
 	          //System.out.println(formPage.asXml());
 	        //mylog(xml.toAbsolutePath().toString());
 	        //mylog(formPage.asText());
+	        if (reimbursementType.startsWith("dienstreiseantrag")||reimbursementType.startsWith("reisekostenabrechnung"))
+    		{
+		        // Get the actual reimbursement form, get the submit button, get and tick the "confirm" box
+		        final HtmlForm form = formPage.getFormByName("sf_admin_edit_form");
+		        final HtmlSubmitInput button2 = form.getInputByName("save");
+		        final HtmlCheckBoxInput box = form.getInputByName(confirmBoxName);
+		        box.setChecked(true);
+		        
+		        // submit form
+		        HtmlPage downloadSite = button2.click();
+		        
+		        //resubmit form because of an university service bug but just for reisekostenantrag
+		        if(!reimbursementType.equalsIgnoreCase("dienstreiseantrag"))
+		        {
+		        	final HtmlForm form2 = downloadSite.getFormByName("sf_admin_edit_form");
+			        final HtmlSubmitInput button3 = form2.getInputByName("save");
+			        downloadSite = button3.click();
+		        }
+		        
+		        System.out.println(formPage.asXml());
+		        
+		        // get the pdf download link
+		        HtmlAnchor pdfURL = downloadSite.getAnchorByText(pdfDownloadLinkName);
+		       
+		        // download the pdf using the download link
+		        InputStream in = pdfURL.click().getWebResponse().getContentAsStream();
 	        
-	        // Get the actual reimbursement form, get the submit button, get and tick the "confirm" box
-	        final HtmlForm form = formPage.getFormByName("sf_admin_edit_form");
-	        final HtmlSubmitInput button2 = form.getInputByName("save");
-	        final HtmlCheckBoxInput box = form.getInputByName(confirmBoxName);
-	        box.setChecked(true);
+	        	 // set the headers and the pdf as payload for the http response
+		        response.setContentType("application/pdf");
+		        response.setHeader("Content-Disposition", "filename=\"dings.pdf\"");
+		        IOUtils.copy(in, response.getOutputStream());
+    		}
 	        
-	        // submit form
-	        HtmlPage downloadSite = button2.click();
-	        
-	        //resubmit form because of an university service bug but just for reisekostenantrag
-	        if(!reimbursementType.equalsIgnoreCase("dienstreiseantrag"))
-	        {
-	        	final HtmlForm form2 = downloadSite.getFormByName("sf_admin_edit_form");
-		        final HtmlSubmitInput button3 = form2.getInputByName("save");
-		        downloadSite = button3.click();
-	        }
-	        
-	        System.out.println(formPage.asXml());
-	        
-	        // get the pdf download link
-	        HtmlAnchor pdfURL = downloadSite.getAnchorByText(pdfDownloadLinkName);
-	       
-	        // download the pdf using the download link
-	        InputStream in = pdfURL.click().getWebResponse().getContentAsStream();
-	        
-	        // set the headers and the pdf as playload for the http response
-	        response.setContentType("application/pdf");
-	        response.setHeader("Content-Disposition", "filename=\"dings.pdf\"");
-	        //response.setHeader("RKA-debug", errors);
-	        IOUtils.copy(in, response.getOutputStream());
+	        if (reimbursementType.startsWith("xmlupload-dra")||reimbursementType.startsWith("xmlupload-rka"))
+    		{
+	        	 
+	        	String html = formPage.getWebResponse().getContentAsString();
+	        	//replace relative urls to absolute ones
+	        	html = html.replaceAll("/pvz", "https://service.uni-leipzig.de/pvz");
+                
+	        	// set the headers and the html site as payload for the http response
+		        response.setContentType("text/html");
+		        response.getOutputStream().write(html.getBytes("UTF-8"));
+    		}
 	        
 			}
 	        
@@ -226,9 +249,21 @@ public class Proxy extends HttpServlet {
 	            if (item.isFormField()) {
 	                // Process regular form field --> reimbursement-type parameter or xml-url parameter
 	               if (item.getFieldName().equals("reimbursement-type"))
-	                	reimbursementType = item.getString();
+	                	{reimbursementType = item.getString();mylog("parsed reimbursement-type: "+reimbursementType);}
 	               if (item.getFieldName().equals("xml-url"))
 	            	   xmlUrl = item.getString();
+	               if (item.getFieldName().equals("reimbursement-xml"))
+	            	{
+		                //String fieldName = item.getFieldName();
+		                //String fileName = FilenameUtils.getName(item.getName());
+		                InputStream fileContent = item.getInputStream();
+		                
+		                // read the submitted xml file and store it as local temporary file
+		    			Long bytes = Files.copy(fileContent, xml, StandardCopyOption.REPLACE_EXISTING);
+		    			
+		    			//mylog(bytes.toString()+" "+xml.toAbsolutePath().toString()+" "+Arrays.toString(Files.readAllLines(xml, StandardCharsets.UTF_8).toArray()));
+		    			mylog("read "+bytes.toString()+" bytes of the xml file");
+	            	}
 	            } else 
 	            {
 	                // Process form file field (input type="file") --> thus the uploaded xml file or nothing if it's a xmldownload request
@@ -245,9 +280,10 @@ public class Proxy extends HttpServlet {
 		    			//mylog(bytes.toString()+" "+xml.toAbsolutePath().toString()+" "+Arrays.toString(Files.readAllLines(xml, StandardCharsets.UTF_8).toArray()));
 		    			mylog("read "+bytes.toString()+" bytes of the xml file");
 	            	}
+	            	
 	            }
 	        }
-	        if (reimbursementType.equals("xmldownload"));
+	        if (reimbursementType.equals("xmldownload"))
 	        {
 	        	try {
 					FileUtils.copyURLToFile(new URL(xmlUrl),xml.toFile(),10000,20000);
