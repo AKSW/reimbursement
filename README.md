@@ -67,6 +67,7 @@ to use the university travel reimbursement form [2] for generating a xml file fr
 
 #### On Ubuntu:
 1. sudo apt-get install network-manager-openconnect
+2. (optional for GNOME) sudo apt-get install  network-manager-openconnect network-manager-openconnect-gnome
 2. open the "Network Connections" Manager GUI
 
 	OPTION: A
