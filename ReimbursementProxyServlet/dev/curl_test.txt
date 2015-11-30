@@ -12,4 +12,4 @@ to see error information inside the response headers; use e.g. http://www.freefo
 or display http://localhost:8080/ReimbursementProxyServlet/Proxy in a browser to show error log of *last* post request
 
 
-curl --form "xml-url=https://service.uni-leipzig.de/pvz/temp/b1e1013185483451e0823dbf5592b6e4.xml" --form "reimbursement-type=xmldownload" http://localhost:8080/ReimbursementProxyServlet/Proxy -o curl.xml -v
+curl --form "xml-url=https://service.uni-leipzig.de/pvz/temp/94c1a25a68bead50052e17a421df9759.xml" --form "reimbursement-type=xmldownload" http://localhost:8080/ReimbursementProxyServlet/Proxy -o curl.xml -v

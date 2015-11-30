@@ -3,7 +3,9 @@ package de.aksw.reimbursement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
@@ -16,6 +18,13 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -30,6 +39,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.client.utils.URIBuilder;
 
 import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -210,23 +220,23 @@ public class Proxy extends HttpServlet {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			mylog("Probably something went wrong with downloading the pdf from university service. See stacktrace below:");
-			mylog(e.getClass()+": "+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace()));
+			mylog(getStacktrace(e));
 			response.setHeader("RKA-status", "Error");
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			mylog(e.getClass()+": "+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace()));
+			mylog(getStacktrace(e));
 			response.setHeader("RKA-status", "Error");
 		} catch (ElementNotFoundException e) {
 			// TODO Auto-generated catch block
 			mylog("There is a problem with your xml file. Check it manually against https://service.uni-leipzig.de/pvz/reisekostenabrechnung to see what the problem is.");
 			e.printStackTrace();
-			mylog(e.getClass()+": "+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace()));
+			mylog(getStacktrace(e));
 			response.setHeader("RKA-status", "Error");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			mylog(e.getClass()+": "+e.getMessage()+"\n\t"+Arrays.toString(e.getStackTrace()));
+			mylog(getStacktrace(e));
 			response.setHeader("RKA-status", "Error");
 	    } finally
 		{
@@ -286,22 +296,26 @@ public class Proxy extends HttpServlet {
 	        if (reimbursementType.equals("xmldownload"))
 	        {
 	        	try {
-					FileUtils.copyURLToFile(new URL(xmlUrl),xml.toFile(),10000,20000);
+					//FileUtils.copyURLToFile(new URL(xmlUrl),xml.toFile(),10000,20000);
+	        		limitedTimeDownload(xmlUrl, xml);
 					mylog("xml downloaded to "+xml.toFile().getAbsolutePath().toString()+" in "+xml.toFile().length()+" bytes.");
 				} catch (MalformedURLException e) {
 					throw new ServletException("No valid URL was given for xmldownload mode: "+e.getMessage(), e);
 				} catch (java.io.FileNotFoundException e) {
 					throw new ServletException("Could not access the given URL for xmldownload mode: "+e.getMessage(), e);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					throw new ServletException("Some IO-Error occured in xmldownload mode: "+e.getMessage(), e);
+				} catch (ServletException e) {
+					throw e;
+				} catch (Throwable e) {
+					// TODO Auto-generated catch block
+					throw new ServletException("Some Throwable has been thrown during xmldownload: "+e.getMessage(), e);
 				}
 	        }
 	    } catch (FileUploadException e) {
 	        throw new ServletException("Cannot parse multipart request: "+e.getMessage(), e);
 	        
 	    } catch (IOException e) {
-			// TODO Auto-generated catch block
 	    	throw new ServletException("An IO-Error occured while parsing the POST request: "+e.getMessage(), e);
 		}
 		return reimbursementType;
@@ -314,9 +328,72 @@ public class Proxy extends HttpServlet {
 		return dateFormat.format(date);
 	}
 	
+	/**
+	 * log a message to the static error variable which will be cleared at the beginning of every post request and can be retrieved via a get request 
+	 */
 	protected void mylog(String message)
 	{
 		errors+="\n"+getDate()+" "+message;
 	}
+	
+	/**
+	 * helper method to get a string of the stacktrace of a Throwable
+	 */
+	protected String getStacktrace(Throwable t)
+	{
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		t.printStackTrace(pw);
+		return sw.toString();
+	}
+	
+	
+	/**
+	 * limits the download capabilities of xmldownload mode to URLs pointing to university reimbursement service only
+	 */
+	public void safeDownloadOfFile(String xmlUrl, Path xml) throws MalformedURLException, IOException, URISyntaxException, ServletException
+	{
+		//URIBuilder u = new URIBuilder(xmlUrl);
+		if (xmlUrl.startsWith("https://service.uni-leipzig.de/pvz/temp/"))
+			FileUtils.copyURLToFile(new URL(xmlUrl),xml.toFile(),10000,20000);	
+		else
+			throw new ServletException("Your requested xml URL ("+xmlUrl+") is not allowed. It does not start with 'https://service.uni-leipzig.de/pvz/temp/'.");
+	}
+	
+	/**
+	 * limits the download time of the specified xmlUrl to 30 seconds
+	 */
+	public void limitedTimeDownload(String xmlUrl, Path xml) throws Throwable {
+	    ExecutorService executor = Executors.newFixedThreadPool(1);
+	    final String xmlUrl2 = xmlUrl; final Path xml2 = xml; //workaround
+	    Future<Void> future = executor.submit(new Callable<Void>() {
+	        @Override
+	        public Void call() throws Exception {
+	        	safeDownloadOfFile(xmlUrl2,xml2); // call of the download function
+	        	return null;
+	        }
+	    });
+
+	    //executor.shutdown();            //        <-- reject all further submissions
+
+	    try {
+	        future.get(30, TimeUnit.SECONDS);  //     <-- wait 30 seconds to finish download procedure
+	    } catch (InterruptedException e) {    //     <-- possible error cases
+	    	throw new ServletException("some error happened during xmldownload (download Thread was interrupted: "+e.getMessage(), e);
+	    } catch (ExecutionException e) {
+	    	throw e.getCause().getClass().cast(e.getCause());
+	    	//throw new ServletException("some error happened during xmldownload: "+e.getMessage(), e.getCause());
+	    } catch (TimeoutException e) {
+	        future.cancel(true);              //     <-- interrupt the job
+	        throw new ServletException("Timeout during xmldownload (maybe the file is too large or server too slow): "+e.getMessage(), e);
+	    }
+
+	    // wait all unfinished tasks for 2 sec
+	    if(!executor.awaitTermination(2, TimeUnit.SECONDS)){
+	        // force them to quit by interrupting
+	        executor.shutdownNow();
+	    }
+	}
+
 
 }
