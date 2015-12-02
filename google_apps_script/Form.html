@@ -1,111 +1,342 @@
+<head>
 <!-- Include the Google CSS package -->
 <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
 <link rel="stylesheet" href="https://docs.google.com/static/forms/client/css/3855039408-formview_st_ltr.css">
+<style type="text/css"> 
+select {text-align: left;}
+</style>
+</head>
+<!--    *************************************************************************           -->
+<!--    *************************************************************************           -->
+<!--    *********************       Application       ***************************           -->
+<!--    *************************************************************************           -->
+<!--    *************************************************************************           -->
 
-<h1 class="ss-form-title" dir="ltr">Travel-Reimbursement</h1>
-<div id="formDiv">
-<form id="myForm" name="myForm">
+<h1 class="ss-form-title" dir="ltr">Travel Application</h1>
+<div id="formDiv" style="border: #B9B7B7;border-width: 1px;border-style: dashed;">
 
-    <div class="ss-form-question errorbox-good">
+
+    <!--d iv class="ss-form-question errorbox-good"-->
     <div class="ss-item ss-text" dir="ltr">
-        <div class="ss-form-entry">
-            <div class="ss-q-title">
-                <label class="ss-q-item-label" for="entry_1988214217">Uni Form XML-File Upload</label>
-            </div>
-            <div class="ss-q-help ss-secondary-text" dir="ltr">Fill out the <a href="https://service.uni-leipzig.de/pvz/dienstreiseantrag/save" target="_blank">form</a> and download it as xml file to submit it below. </div>
-             <input name="FileToLoad" type="file">
-            <div class="error-message" id="754981348_errorMessage">Error Message</div>
-            <div class="required-message">
-                Dieses Feld muss ausgefüllt werden.
-            </div>
+       
+<!-- Step 1 -->
+        <h2 class="ss-q-title">
+                <label class="ss-q-item-label" for="entry_1988214217">Step 1 (before travel): Initial capturing of travel data in XML</label>
+        </h2>
+        <div class="ss-q-help ss-secondary-text" dir="ltr">
+			<b>Fill out your <a href="javascript:void(0);" onclick="openApplicationForm();">templated form</a> to receive the URL for the Travel Application XML in Step 2 (alternatively you can download and reupload the file).</b><br><br>
+			<i>Help: If you don't have a template yet, please follow the instructions at <a href="https://github.com/AKSW/reimbursement#aksw-travel-reimbursement-tool">GitHub setup instructions</a> or fill out a <a href="https://service.uni-leipzig.de/pvz/dienstreiseantrag/save" target="_blank">blank form</a>.</i>
         </div>
-    </div>
-    </div>
-    
-    <div class="ss-form-question errorbox-good">
-    <div class="ss-item ss-select">
-        <div class="ss-form-entry">
-            <div class="ss-q-title">
-                <label class="ss-q-item-label">Project</label>
-            </div>
-            <div class="ss-q-help ss-secondary-text">Choose the project of the travel</div>
-            <select class="valid" name="PaidBy">                             <!-- generate the dropdown list for the current projects by reading it from a spreadsheet -->
+	</div>
             
-            <? var data = getProjectsFromSpreadsheet();
-            for (var i = 0; i < data.length; i++) {  ?> 
-            <option value="<?= getProjectsFromSpreadsheet()[i].Name ?>"><?= getProjectsFromSpreadsheet()[i].Name ?></option>
-            <? } ?>
-               <!-- <option value="DIESEL">DIESEL</option>
-                <option value="LEDS">LEDS</option>
-                <option value="SmartDataWeb">SmartDataWeb</option>
-                <option value="LinkingLOD">LinkingLOD</option>
-                <option value="Aligned">Aligned</option>
-                <option value="BigDataEurope">BigDataEurope</option>
-                <option value="Freme">Freme</option>
-                <option value="Sake">Sake</option>
-                <option value="LIDER">LIDER</option>
-                <option value="GeoKnow">GeoKnow</option> -->
-            </select>
-            <div class="required-message">
-                Dieses Feld muss ausgefüllt werden.
-            </div>
-        </div>
-    </div>
-    </div>
-    
-    <div class="ss-form-question errorbox-good">
-    <div class="ss-item ss-text" dir="ltr">
+<!-- Step 2 --> 
+    <form id="myForm" name="myForm">
         <div class="ss-form-entry">
-            <div class="ss-q-title">
-                <label class="ss-q-item-label" for="entry_1988214217">Justification</label>
+            <h2 class="ss-q-title">
+                <label class="ss-q-item-label" for="entry_1988214217">Step 2 (before travel): Travel application by upload of XML via URL (or file)</label>
+            </h2>
+            <div class="ss-q-help ss-secondary-text" dir="ltr">
+				<b>Paste the URL from Step 1 in the field below. Don't forget to fill out additional info below.</b><br><br>
+				<i>Help: here are detailed instructions on GitHub TODO add link to screenshot</i>
             </div>
-            <div class="ss-q-help ss-secondary-text" dir="ltr">The justification is not covered by the xml file. Please provide it here.</div>
-            <textarea name="Justification" rows="8" style="width: 230px" class="ss-q-long valid" id="entry_1988214217" dir="auto" aria-label="Justification"></textarea>
+    
+            <fieldset style="border: 0px">
+				<input type="radio" id="xml-url-mode"  name="xmlMode" value="xml-url-mode"><label for="xml-url-mode">Provide URL to XML</label>
+				<input type="radio" id="xml-file-mode" name="xmlMode" value="xml-file-mode"><label for="xml-file-mode">Upload XML as File</label>
+			</fieldset>
+			
+            <input id="FileToLoad" name="FileToLoad" type="file" style="display: none;">
+			
+            <div id="UrlToLoadDiv"><label for="UrlToLoad">Please paste the URL from Step 1 to the XML here:</label><input type="url" id="UrlToLoad" name="UrlToLoad"></div>
             <div class="error-message" id="754981348_errorMessage">Error Message</div>
             <div class="required-message">
                 Dieses Feld muss ausgefüllt werden.
             </div>
         </div>
-    </div>
-    </div>
+		
+		<div class="ss-form-question errorbox-good">
+			<div class="ss-item ss-select">
+				<div class="ss-form-entry">
+					<div class="ss-q-title">
+						<label class="ss-q-item-label">Required info: Funding Project</label>
+					</div>
+					<div class="ss-q-help ss-secondary-text">Choose the project funding of the travel (<a href="https://docs.google.com/spreadsheets/d/1kvQrFVtHIvwknUzMfvstNl_cRnNZRcSsRuC3dCFfDDU/edit#gid=0" target="_blank">Project not found?</a>)</div>
+					<select class="valid" name="PaidBy">                             <!-- generate the dropdown list for the current projects by reading it from a spreadsheet -->
+					<!--option value="none">Select ...</option-->
+					  <? var data = getProjectsFromSpreadsheet();
+						 for (var i = 0; i < data.length; i++) {  ?> 
+						   <option value="<?= data[i].Name ?>"><?= data[i].PaidBy+" - "+data[i].Name ?></option>
+						 <? } ?>
+					</select>
+					<div class="required-message">
+						Dieses Feld muss ausgefüllt werden.
+					</div>
+				</div>
+			</div>
+		</div>
+        
+        <div class="ss-form-question errorbox-good">
+			<div class="ss-item ss-select">
+				<div class="ss-form-entry">
+					<div class="ss-q-title">
+						<label class="ss-q-item-label">Required info: Travel Region</label>
+					</div>
+					<!--<div class="ss-q-help ss-secondary-text"> (<a href="https://docs.google.com/spreadsheets/d/1kvQrFVtHIvwknUzMfvstNl_cRnNZRcSsRuC3dCFfDDU/edit#gid=0" target="_blank">Project not found?</a>)</div>-->
+					<select class="valid" name="Deduction">                             <!-- generate the dropdown list for the travel areas by reading it from a spreadsheet -->
+					<!--option value="none">Select ...</option-->
+					  <? var data = getTravelRegions(); var in_opt_group = false;
+						 for (var i = 0; i < data.length; i++) 
+                         {
+                         
+                           switch (data[i].type) 
+                           {
+                             case "country":
+                                if (in_opt_group) { ?></optgroup><?} //close optgroup first if there is still one opened
+                                in_opt_group = false; //country signalizes end of a possible opened optgroup?>
+                                 <option value="<?= data[i].id ?>"><?= data[i]['Country_Name_EN']+' ('+data[i]['Country_Name_DE']+')' ?></option><?
+                                break;
+                             case "complex_country":
+                                if (in_opt_group) { ?></optgroup><?} //close optgroup first if there is still one opened
+                                ?><optgroup label="<?=data[i]['Country_Name_EN']+' ('+data[i]['Country_Name_DE']+')'?>"><?
+                                in_opt_group = true; //begin of an optgroup
+                                break;
+                             case "region": ?>
+                                <option value="<?= data[i].id ?>"><?= data[i]['Region_Name_EN']+' ('+data[i]['Region_Name_DE']+')'?></option><?    
+                           }
+                           
+                         }
+                         if (in_opt_group) { ?></optgroup><?} //finally close optgroup if there is still one opened
+                         ?>
+					</select>
+					<div class="required-message">
+						Dieses Feld muss ausgefüllt werden.
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="ss-form-question errorbox-good">
+			<div class="ss-item ss-text" dir="ltr">
+				<div class="ss-form-entry">
+					<div class="ss-q-title">
+						<label class="ss-q-item-label" for="entry_1988214217">Required info: Justification of travel for funding agency</label>
+					</div>
+					<div class="ss-q-help ss-secondary-text" dir="ltr"><p>Please enter a justification for your travel. This justification is needed for the proper payment of your travel. The justification should be very specific and even mention individual work packages of the project.<br> The info is not covered by the xml file. Please provide it here.</p></div>
+					<textarea name="Justification" rows="4" style="width: 430px" class="ss-q-long valid" id="entry_1988214217" dir="auto" aria-label="Justification"></textarea>
+					<div class="error-message" id="754981348_errorMessage">Error Message</div>
+					<div class="required-message">
+						Dieses Feld muss ausgefüllt werden.
+					</div>
+				
+				</div>
+			</div>
+		</div>
+		
+		<input onclick="FileUploadJs(this.parentNode)" type="button" value="Submit Application">
+	    <input type="hidden" name="reimbursement-mode" value="dienstreiseantrag">
+	</form>
 
-    <!--
-    <div class="ss-item ss-radio" dir="ltr">
-        <div class="ss-form-entry">
-            <label class="ss-q-item-label" for="entry_754981348"></label>
-
-            <div class="ss-q-title">
-                <label class="ss-q-item-label" for="entry_754981348">XML File URL</label>
-            </div>
-            <ul class="ss-choices">
-                <li class="ss-choice-item"><label><span class="ss-choice-item-control goog-inline-block"><input class="ss-q-radio valid" id="group_1988214217_1" name="entry.1988214217" type="radio"
-                value="a"></span> <span class="ss-choice-label">a</span></label></li>
-
-                <li class="ss-choice-item"><label><span class="ss-choice-item-control goog-inline-block"><input class="ss-q-radio valid" id="group_1988214217_2" name="entry.1988214217" type="radio"
-                value="b"></span> <span class="ss-choice-label">b</span></label></li>
-            </ul>
-            <div class="error-message" id="754981348_errorMessage"></div>
-            <div class="required-message">
-                Dieses Feld muss ausgefüllt werden.
-            </div>
-        </div>
-    </div> -->
-    
-    <input onclick="FileUploadJs(this.parentNode)" type="button" value="Submit">
-</form>
 </div>
+
 
 <pre>
 <div id="status" style="display: none;">
 
-  <!-- div will be filled with innerHTML after form submission. -->
+  <!-- d i v will be filled with innerHTML after form submission. -->
   Uploading. Please wait...
 
 </div>
 </pre>
 
+<!--    *************************************************************************           -->
+<!--    *************************************************************************           -->
+<!--    *********************      Reimbursement      ***************************           -->
+<!--    *************************************************************************           -->
+<!--    *************************************************************************           -->
+<br><br>
 
+
+<h1 class="ss-form-title" dir="ltr">Travel Reimbursement</h1>
+<div id="formDiv2" style="border: #B9B7B7;border-width: 1px;border-style: dashed;">
+
+<!-- Step 3 -->
+        
+	<h2 class="ss-q-title">
+            <label class="ss-q-item-label" for="entry_1988214217">Step 3 (after travel): Creation of travel data XML for reimbursement</label>
+    </h2>
+    <form id="myForm2" name="myForm">     
+	<div class="ss-form-question errorbox-good">	
+			<div class="ss-item ss-select">
+				<div class="ss-form-entry">
+					<div class="ss-q-title">
+						<label class="ss-q-item-label">Existing travel applications can be selected in the dropdown menu (the link on the right side will be regenerated, if nothing is selected it sends you to your default travel application XML template):</label>
+					</div>
+					<div class="ss-q-help ss-secondary-text"></div>
+					<select class="valid" name="selectedTravel" onchange="getTravelTemplate();" id="travelSelect">                             <!-- generate the dropdown list for last travels by reading it from the controlling table -->
+					<option value="none">Select ...</option>
+					  <? var data = getApplicatedTravels();
+						 for (var i = 0; i < data.length; i++) {  ?> 
+						   <option value="<?= data[i].drivelink ?>"><?= data[i].dates+" - "+data[i].reiseziel ?></option>
+						 <? } ?>
+					</select>
+                    <a href="javascript:void(0);" onclick="openReimbursementFormUsingTravel();" id="openTravelTemplateLink">Open Templated Form of Selected Travel</a>
+					<div class="required-message">
+						Dieses Feld muss ausgefüllt werden.
+					</div>
+				</div>
+			</div>
+	</div>
+        
+        
+<!-- Step 4 -->
+
+	<div class="ss-form-entry">
+				<h2 class="ss-q-title">
+					<label class="ss-q-item-label" for="entry_1988214217">Step 4 (after travel): Final travel reimbursement XML upload</label>
+				</h2>
+		
+				<div class="ss-q-help ss-secondary-text" dir="ltr">
+				<b>Paste the URL from Step 3 in the field below. Don't forget to fill out additional info below.</b><br><br>
+				<i>Help: here are detailed instructions on GitHub TODO add link to screenshot</i>
+				</div>
+		
+				 <fieldset style="border: 0px">
+					<input type="radio" id="xml-url-mode2"  name="xmlMode" value="xml-url-mode"><label for="xml-url-mode2">Provide URL to XML</label>
+					<input type="radio" id="xml-file-mode2" name="xmlMode" value="xml-file-mode"><label for="xml-file-mode2">Upload XML as File</label>
+				 </fieldset>
+				 <input id="FileToLoad2" name="FileToLoad" type="file" style="display: none;">
+				 <div id="UrlToLoadDiv2"><label for="UrlToLoad">Please paste the URL from Step 3 to the XML here:</label><input type="url" id="UrlToLoad" name="UrlToLoad"></div>
+				<div class="error-message" id="754981348_errorMessage">Error Message</div>
+				<div class="required-message">
+					Dieses Feld muss ausgefüllt werden.
+				</div>
+	</div>
+    
+    <input onclick="FileUploadJs(this.parentNode)" type="button" value="Submit Reimbursement">
+    <input type="hidden" name="reimbursement-mode" value="reisekostenabrechnung">
+    
+    </form> 
+    
+</div>
+
+
+<!--    *************************************************************************           -->
+<!--    *************************************************************************           -->
+<!--    *********************       Javascript        ***************************           -->
+<!--    *************************************************************************           -->
+<!--    *************************************************************************           -->
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script>
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+
+
+/** jquery stuff for toggling between 'Provide URL to XML' and 'Upload XML as File'
+ *
+ */
+$(document).ready(function() {
+    $(':radio[value="xml-url-mode"]').attr('checked', 'checked');
+	$('#FileToLoad').hide();$('#FileToLoad2').hide();
+   $('input[type="radio"]').click(function() {
+       if($(this).attr('id') == 'xml-file-mode') {
+            $('#FileToLoad').show();
+            $('#UrlToLoadDiv').hide();                  
+       }
+       if($(this).attr('id') == 'xml-file-mode2') {
+            $('#FileToLoad2').show();
+            $('#UrlToLoadDiv2').hide();                  
+       }
+       if($(this).attr('id') == 'xml-url-mode') {
+            $('#UrlToLoadDiv').show();
+            $('#FileToLoad').hide();    
+       }
+       if($(this).attr('id') == 'xml-url-mode2') {
+            $('#UrlToLoadDiv2').show();
+            $('#FileToLoad2').hide();    
+       }
+   });
+});
+
+var form;
+var xmlcontent ="<?=getUserTemplate()?>"; //global for content of the template xml file, by default this is set to the user template
+
+
+/** prepares a post request with multipart/form-data encoding by adding a hidden form
+ *
+ * @param {String} path url for target of post request
+ * @param {Object} params key/value map with names/values
+ */
+function post(path, params) {
+    var form = document.createElement("form");
+    form.setAttribute("method", 'post');
+    form.setAttribute("action", path);
+	form.setAttribute("enctype", 'multipart/form-data');
+	form.setAttribute('target', '_blank');
+
+    for(var key in params) {
+        if(params.hasOwnProperty(key)) {
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
+			
+            form.appendChild(hiddenField);
+         }
+    }
+
+    document.body.appendChild(form);
+    return form
+};
+
+/** opens the university travel application form in new tab by using the user template
+ *
+ */
+function openApplicationForm() {
+    var params = {'reimbursement-type': 'xmlupload-dra','reimbursement-xml': xmlcontent};
+	form = post("http://rka.aksw.org/ReimbursementProxyServlet/Proxy",params);
+	form.submit();
+};
+
+/** opens the university travel reimbursement form in new tab by using the user "Travel Application.xml" from the selected Travel
+ *
+ */
+function openReimbursementFormUsingTravel() { 
+    var params = {'reimbursement-type': 'xmlupload-rka','reimbursement-xml': xmlcontent};
+	var form = post("http://rka.aksw.org/ReimbursementProxyServlet/Proxy",params);
+	form.submit();
+};
+
+/** call back function which stores the fetched  "Travel Application.xml" from the selected Travel in the global variable
+ *
+ */
+function saveTravelTemplate(xml) {
+    xmlcontent = xml;
+    var anchor = document.getElementById("openTravelTemplateLink");
+    anchor.style = "";
+    console.log('successfully fetched "Travel Application.xml" for selected Travel: xml content is: '+xml);
+};
+
+/** this functions is triggered when there is a new selection in Travel Pulldown menu, it fetches the "Travel Application.xml" from the selected Travel
+ *
+ */
+function getTravelTemplate() {
+   var anchor = document.getElementById("openTravelTemplateLink");
+   anchor.style = "display: none;";
+   
+   var e = document.getElementById("travelSelect");
+   var drivelink = e.options[e.selectedIndex].value;
+   
+   console.log('changed selected Travel; new drivelink for travel template is now: '+drivelink);
+   console.log('starting fetch of xml document: '+drivelink);
+   google.script.run
+         .withSuccessHandler(saveTravelTemplate)
+         .withFailureHandler(showError)
+         .getTravelTemplate(drivelink);
+
+};
 
 /** Javascript function called after clicking on submit button
  *
@@ -113,7 +344,7 @@
  */
 function FileUploadJs(frmData) {
 
-  document.getElementById('status').style = 'display:inline';
+  document.getElementById('status').style = 'display:inline; background-color: rgba(247, 233, 20, 1.0)';
   document.getElementById('status').innerHTML = 'Uploading. Please wait...';
 
   google.script.run
@@ -147,4 +378,5 @@ function showError(outp) {
     var outputDiv = document.getElementById('status');
     outputDiv.innerHTML = outp;
 };
+
 </script>

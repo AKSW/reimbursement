@@ -91,4 +91,3 @@ function readFromDeductionsTable(rate_name)
   var data = objDB.getRows( db,sheetname,[],{'id':region_id});
   return data[0][rate_name]; 
 }
-
